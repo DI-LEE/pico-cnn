@@ -124,7 +124,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                     //fp_t 는 parameter.h 에 정의되어 있음 => float 형(typedef 기법)
                     //auto 는 자동으로 형을 정해주는 역할
                     //values 에 kernel의 크기만큼 fp_t 형의 배열을 생성 (values 에 배열의 주소를 넣음)
-                    auto *values = new fp_t[kernel_height*kernel_width](); 
+                    auto *values = new float[kernel_height*kernel_width](); 
 
                     for (uint32_t out_ch = 0; out_ch < num_output_channels; out_ch++) {
                         for (uint32_t in_ch = 0; in_ch < num_input_channels; in_ch++) {
@@ -136,9 +136,15 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                                 fclose(binary_file);
                                 return 1;
                             }
+                            // for(int i = 0;i<5;i++){
+                            //     printf("weight %d:%f\n", i,values[i]);
+                            // }
                             //memcpy 함수로 커널 크기만큼 values 가 가리키는 배열의 데이터를 
+                            for (uint32_t i=0; i<sizeof(values); i++){
+                                values[i] = (int16_t)values[i];
+                            }
                             std::memcpy((*kernels)[kernel_idx]->get_ptr_to_channel(out_ch, in_ch),
-                                        values, kernel_height*kernel_width*sizeof(fp_t));
+                                        values, kernel_height*kernel_width*sizeof(float));
                         }
                     }
 
@@ -156,7 +162,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                 PRINT_DEBUG("Number of biases: " << num_biases)
 
                 if (num_biases) {
-                    auto *bias_values = new fp_t[num_biases]();
+                    auto *bias_values = new float[num_biases]();
 
                     if(fread((void *) bias_values, sizeof(float), num_biases, binary_file) != num_biases) {
                         PRINT_ERROR("ERROR while reading bias values.")
@@ -164,7 +170,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                         fclose(binary_file);
                         return 1;
                     }
-                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), bias_values, num_biases*sizeof(fp_t));
+                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), bias_values, num_biases*sizeof(float));
 
                     bias_idx++;
 
@@ -182,7 +188,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                 PRINT_DEBUG("Number of gamma values: " << num_gamma)
 
                 if(num_gamma) {
-                    auto* gamma_values = new fp_t[num_gamma]();
+                    auto* gamma_values = new float[num_gamma]();
 
                     if(fread((void *) gamma_values, sizeof(float), num_gamma, binary_file) != num_gamma) {
                         PRINT_ERROR("ERROR while reading gamma values.")
@@ -190,7 +196,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                         fclose(binary_file);
                         return 1;
                     }
-                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), gamma_values, num_gamma*sizeof(fp_t));
+                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), gamma_values, num_gamma*sizeof(float));
 
                     bias_idx++;
 
@@ -207,7 +213,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                 PRINT_DEBUG("Number of beta values: " << num_beta)
 
                 if(num_beta) {
-                    auto *beta_values = new fp_t[num_beta]();
+                    auto *beta_values = new float[num_beta]();
 
                     if(fread((void *) beta_values, sizeof(float), num_beta, binary_file) != num_beta) {
                         PRINT_ERROR("ERROR while reading beta values.")
@@ -215,7 +221,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                         fclose(binary_file);
                         return 1;
                     }
-                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), beta_values, num_beta*sizeof(fp_t));
+                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), beta_values, num_beta*sizeof(float));
 
                     bias_idx++;
 
@@ -232,7 +238,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                 PRINT_DEBUG("Number of mean values: " << num_mean)
 
                 if(num_mean) {
-                    auto *mean_values = new fp_t[num_mean]();
+                    auto *mean_values = new float[num_mean]();
 
                     if(fread((void *) mean_values, sizeof(float), num_mean, binary_file) != num_mean) {
                         PRINT_ERROR("ERROR while reading mean values.")
@@ -240,7 +246,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                         fclose(binary_file);
                         return 1;
                     }
-                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), mean_values, num_mean*sizeof(fp_t));
+                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), mean_values, num_mean*sizeof(float));
 
                     bias_idx++;
 
@@ -257,7 +263,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                 PRINT_DEBUG("Number of variance values: " << num_variance)
 
                 if(num_variance) {
-                    auto *variance_values = new fp_t[num_variance]();
+                    auto *variance_values = new float[num_variance]();
 
                     if(fread((void *) variance_values, sizeof(float), num_variance, binary_file) != num_variance) {
                         PRINT_ERROR("ERROR while reading variance values.")
@@ -265,7 +271,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                         fclose(binary_file);
                         return 1;
                     }
-                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), variance_values, num_variance*sizeof(fp_t));
+                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), variance_values, num_variance*sizeof(float));
 
                     bias_idx++;
 
@@ -299,7 +305,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                 PRINT_DEBUG("Num kernels: " << num_kernels << ", height: " << kernel_height << ", width: " << kernel_width << ", kernel_idx: " << kernel_idx)
 
                 uint32_t kernel;
-                auto *values = new fp_t[kernel_height*kernel_width]();
+                auto *values = new float[kernel_height*kernel_width]();
 
                 if(num_kernels != 1)
                     PRINT_ERROR_AND_DIE("Number of kernels != 1")
@@ -311,7 +317,10 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                         fclose(binary_file);
                         return 1;
                     }
-                    std::memcpy((*kernels)[kernel_idx]->get_ptr_to_channel(0, kernel), values, kernel_height*kernel_width*sizeof(fp_t));
+                    for (uint32_t i=0; i<sizeof(values); i++){
+                        values[i] = (int16_t)values[i];
+                    }
+                    std::memcpy((*kernels)[kernel_idx]->get_ptr_to_channel(0, kernel), values, kernel_height*kernel_width*sizeof(float));
                 }
 
                 kernel_idx++;
@@ -327,7 +336,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                 PRINT_DEBUG("Number of biases: " << num_biases)
 
                 if(num_biases) {
-                    auto *bias_values = new fp_t[num_biases]();
+                    auto *bias_values = new float[num_biases]();
 
                     if(fread((void *) bias_values, sizeof(float), num_biases, binary_file) != num_biases) {
                         PRINT_ERROR("ERROR while reading bias values.")
@@ -335,7 +344,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                         fclose(binary_file);
                         return 1;
                     }
-                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), bias_values, num_biases*sizeof(fp_t));
+                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), bias_values, num_biases*sizeof(float));
 
                     bias_idx++;
 
@@ -351,7 +360,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                 PRINT_DEBUG("Number of biases: " << num_biases)
 
                 if (num_biases) {
-                    auto *bias_values = new fp_t[num_biases]();
+                    auto *bias_values = new float[num_biases]();
 
                     if(fread((void *) bias_values, sizeof(float), num_biases, binary_file) != num_biases) {
                         PRINT_ERROR("ERROR while reading bias values.")
@@ -359,7 +368,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                         fclose(binary_file);
                         return 1;
                     }
-                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), bias_values, num_biases*sizeof(fp_t));
+                    std::memcpy((*biases)[bias_idx]->get_ptr_to_channel(0, 0), bias_values, num_biases*sizeof(float));
 
                     bias_idx++;
 
