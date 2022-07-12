@@ -3,20 +3,20 @@
 int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::Tensor ***kernels, pico_cnn::naive::Tensor ***biases) {
 
     FILE *binary_file;
-    binary_file = fopen(path_to_weights_file, "r");
+    binary_file = fopen(path_to_weights_file, "r"); //weights_file open
 
     if(binary_file != 0) {
 
-        // Read magic number
+        // Read magic number : 파일 유형을 특정해주는 magic number 읽기
         char magic_number[4];
         if(fread((void*)&magic_number, 1, 3, binary_file) != 3) {
             PRINT_ERROR("ERROR reading magic number")
             fclose(binary_file);
             return 1;
         }
-        magic_number[3] = '\0';
+        magic_number[3] = '\0'; //'\0' : 문자열의 끝을 나타냄
 
-        if(strcmp(magic_number,"FD\n") != 0) {
+        if(strcmp(magic_number,"FD\n") != 0) { //FD : File Descripter
             PRINT_ERROR("ERROR: Wrong magic number: " << magic_number)
             fclose(binary_file);
             return 1;
@@ -27,7 +27,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
         char buffer[100];
         char c = '\0';
         uint32_t i = 0;
-        for(; c != '\n'; i++){
+        for(; c != '\n'; i++){ //'\n'이 나올때까지 (문장이 끝날때까지) for loop
             if(fread((void*)&c, sizeof(c), 1, binary_file) != 1) {
                 PRINT_ERROR("ERROR while reading name")
                 fclose(binary_file);
@@ -40,7 +40,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
         PRINT_DEBUG(buffer)
 
         // Read number of layers
-        uint32_t num_layers;
+        uint32_t num_layers; //layer의 개수
         if(fread((void*)&num_layers, sizeof(num_layers), 1, binary_file) != 1) {
             PRINT_ERROR("ERROR reading number of layers")
             fclose(binary_file);
@@ -56,6 +56,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
         kernel_idx = 0;
         bias_idx = 0;
 
+        //layer 의 개수만큼 반복
         for(layer = 0; layer < num_layers; layer++) {
 
             // Read layer name
@@ -86,7 +87,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
             buffer_layer_type[i-1] = '\0'; //terminate string correctly
 
             PRINT_DEBUG("Layer " << layer << ": " << buffer << " of type: " << buffer_layer_type)
-
+            //layerㅣ 타입이 'Conv' 일 때
             if(strcmp(buffer_layer_type, "Conv") == 0) {
 
                 uint32_t num_output_channels = 0;
@@ -94,6 +95,7 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                 uint32_t kernel_height = 0;
                 uint32_t kernel_width = 0;
 
+                //channel 과 kernel 의 크기를 읽어들임
                 if (fread((void *) &num_output_channels, sizeof(num_output_channels), 1, binary_file) != 1) {
                     PRINT_ERROR("ERROR while reading number of output channels")
                     fclose(binary_file);
@@ -118,17 +120,23 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
                             num_input_channels << ", height: " << kernel_height << ", width: " <<
                             kernel_width << ", kernel_idx: " << kernel_idx)
 
-                if(kernel_height != 0 && kernel_width != 0 && num_output_channels != 0 && num_input_channels != 0) {
-                    auto *values = new fp_t[kernel_height*kernel_width]();
+                if(kernel_height != 0 && kernel_width != 0 && num_output_channels != 0 && num_input_channels != 0) { //모두 잘 읽혔을 때
+                    //fp_t 는 parameter.h 에 정의되어 있음 => float 형(typedef 기법)
+                    //auto 는 자동으로 형을 정해주는 역할
+                    //values 에 kernel의 크기만큼 fp_t 형의 배열을 생성 (values 에 배열의 주소를 넣음)
+                    auto *values = new fp_t[kernel_height*kernel_width](); 
 
                     for (uint32_t out_ch = 0; out_ch < num_output_channels; out_ch++) {
                         for (uint32_t in_ch = 0; in_ch < num_input_channels; in_ch++) {
+                            //fread 함수를 통해 kernel 크기만큼 float 형 데이터를 읽어들여 values 가 가리키는 배열에 넣는다.
+                            //sizeof(float) 를 int 로 변경
                             if(fread((void *) values, sizeof(float), kernel_height * kernel_width, binary_file) != (kernel_height*kernel_width)) {
                                 PRINT_ERROR("ERROR while reading kernel values.")
                                 free(values);
                                 fclose(binary_file);
                                 return 1;
                             }
+                            //memcpy 함수로 커널 크기만큼 values 가 가리키는 배열의 데이터를 
                             std::memcpy((*kernels)[kernel_idx]->get_ptr_to_channel(out_ch, in_ch),
                                         values, kernel_height*kernel_width*sizeof(fp_t));
                         }
