@@ -1,5 +1,21 @@
 #include "read_binary_weights.h"
 
+//returns a n bit number
+unsigned int pack_float(float x, int n){
+    unsigned tmp;
+    std::memcpy(&tmp, &x, sizeof(tmp));
+    int k = 32 - n;
+    return tmp >> k;
+}
+
+float unpack_float(unsigned int x, int n){
+    int k = 32 - n;
+    x <<= k;
+    float tmp;
+    std::memcpy(&tmp, &x, sizeof(tmp));
+    return tmp;
+}
+
 int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::Tensor ***kernels, pico_cnn::naive::Tensor ***biases) {
 
     FILE *binary_file;
@@ -128,21 +144,32 @@ int32_t read_binary_weights(const char* path_to_weights_file, pico_cnn::naive::T
 
                     for (uint32_t out_ch = 0; out_ch < num_output_channels; out_ch++) {
                         for (uint32_t in_ch = 0; in_ch < num_input_channels; in_ch++) {
-                            //fread 함수를 통해 kernel 크기만큼 float 형 데이터를 읽어들여 values 가 가리키는 배열에 넣는다.
-                            //sizeof(float) 를 int 로 변경
+                            //fread 함수를 통해 kernel 크기만큼 float 형 데이터로 이루어진 배열을 읽어들여 values 에 넣는다.
                             if(fread((void *) values, sizeof(float), kernel_height * kernel_width, binary_file) != (kernel_height*kernel_width)) {
                                 PRINT_ERROR("ERROR while reading kernel values.")
                                 free(values);
                                 fclose(binary_file);
                                 return 1;
                             }
+
                             // for(int i = 0;i<5;i++){
                             //     printf("weight %d:%f\n", i,values[i]);
                             // }
-                            //memcpy 함수로 커널 크기만큼 values 가 가리키는 배열의 데이터를 
+                            
+                            /* weight 값들을 int16_t 로 바꾸는 코드(train 자체를 int16_t 로 시키지 않았기 때문에 말도 안되는 코드임)
                             for (uint32_t i=0; i<sizeof(values); i++){
                                 values[i] = (int16_t)values[i];
+                            }*/
+
+                            printf("before weight : %f\n", values[0]);
+
+                            for (uint32_t i=0; i<sizeof(values); i++){
+                                values[i] = unpack_float(pack_float(values[i], 4), 4);
                             }
+                            
+                            printf("after weight : %f\n", values[0]);
+
+                            //memcpy 함수로 커널 크기만큼 values 가 가리키는 배열의 데이터를
                             std::memcpy((*kernels)[kernel_idx]->get_ptr_to_channel(out_ch, in_ch),
                                         values, kernel_height*kernel_width*sizeof(float));
                         }
